@@ -1,23 +1,39 @@
-# CRUD Usuarios: Arquitectura Hexagonal con DDD y CQRS
+# CRUD Usuarios y Noticias: Arquitectura Hexagonal con DDD y CQRS
 
-Aplicación web PHP para la gestión de usuarios: registro, listado, visualización, edición, eliminación, autenticación con sesión y recuperación de contraseña por correo.
+Aplicación web PHP para la gestión de usuarios y noticias: registro, listado, visualización, edición, eliminación, autenticación con sesión y recuperación de contraseña por correo electrónico.
+
+## Despliegue en Producción (Railway)
+
+- **URL de la aplicación:** `https://tu-dominio.up.railway.app` *(reemplaza con tu enlace público de Railway)*
+- **Plataforma:** Railway (contenedor Docker `php:8.2-cli` + MySQL)
+
+---
 
 ## Tecnologías
 
-- PHP 8.3
-- MySQL
-- Apache mod_rewrite
+- PHP 8.2 / 8.3
+- MySQL (PDO con Prepared Statements)
+- Docker (`php:8.2-cli` + `router.php`) y Apache `mod_rewrite` (entorno local)
+- Resend HTTP API (`cURL`) para envío transaccional de correos
 
 ---
 
 ## Funcionalidades
 
+### Gestión de Usuarios
 - Crear, listar, ver, editar y eliminar usuarios
-- Autenticación con sesión (login / logout)
-- Recuperación de contraseña mediante contraseña temporal enviada por correo
-- Protección de rutas según estado de autenticación
+- Autenticación con sesión (`login` / `logout`) y contraseñas encriptadas (`Bcrypt`)
+- Recuperación de contraseña mediante contraseña temporal enviada por correo vía API HTTP de Resend
+- Envío de notificaciones por correo electrónico
+
+### Gestión de Noticias (Ejercicio 29)
+- Crear, listar, ver detalle, editar y eliminar noticias
+- Validación de campos (categoría, fechas, ubicación geográfica, periodista, programa, descripción y nivel de público)
+
+### Seguridad y Enrutamiento
+- Protección de rutas privadas según estado de autenticación
 - Protección contra acceso directo a archivos y listado de directorios
-- Envía notificaciones a los usuarios vía Correo Electronico
+- Enrutador frontal (`router.php`) para servir recursos estáticos (CSS/JS) y redirigir peticiones hacia `public/index.php`
 
 ---
 
@@ -26,91 +42,48 @@ Aplicación web PHP para la gestión de usuarios: registro, listado, visualizaci
 ### Arquitectura general
 - Arquitectura Hexagonal (Ports & Adapters)
 - DDD (Domain-Driven Design)
-- CQRS
-- Capas: Domain / Application / Infrastructure / Entrypoints
+- CQRS (Commands y Queries)
+- Capas: `Domain` / `Application` / `Infrastructure` / `Entrypoints`
 - Front Controller · Single Entry Point
 
 ### Capa de Dominio
-- Rich Domain Model
-- Value Objects
-- Named Constructors
-- Domain Exceptions
-- Domain Events
-- Enumerations (Enums)
-- Ubiquitous Language
-- Inmutabilidad
-- Fail-fast validation
-- Encapsulación de reglas de negocio
-
+- Rich Domain Model & Value Objects inmutables
+- Named Constructors y Domain Exceptions
+- Enumerations (`UserRoleEnum`, `UserStatusEnum`, `NivelPublicoEnum`)
+- Ubiquitous Language, Fail-fast validation y encapsulación de reglas de negocio
 
 ### Capa de Aplicación
-- Use Cases
-- Application Services
-- Ports In (interfaces de casos de uso)
-- Ports Out (interfaces de persistencia)
-- Commands y Queries
-- DTOs
-- Anti-corruption Layer
-- Application Mapper
-
+- Use Cases y Application Services
+- Ports In (interfaces de casos de uso) y Ports Out (`UserRepositoryPort`, `NoticiaRepositoryPort`, `EmailSenderPort`)
+- Commands, Queries, DTOs y Application Mappers
 
 ### Capa de Infraestructura
-- Repository Pattern
-- Data Mapper
-- Persistence DTO
-- Persistence Entity
+- Repository Pattern y Data Mapper
+- Persistence DTO y Persistence Entity
 - PDO con Prepared Statements
-- Adapter Pattern
+- Adapter Pattern (`EmailSenderService` integrado con Resend HTTP API)
 
 ### Entrypoints / Presentación
 - Enrutamiento por query string (`?route=`)
-- PRG (Post-Redirect-Get)
-- Flash Messages
+- PRG (Post-Redirect-Get) y Flash Messages
 - Autenticación basada en sesiones
-- Web Mapper
-- Web DTOs (WebRequest / UserResponse)
-- `View::render` con `extract`
-- Security Guard (IIFE)
+- Web Mappers, Web DTOs (`WebRequest` / `Response`) y `View::render`
 
 ---
 
-### Patrones de diseño
-- Front Controller
-- Repository
-- Data Mapper
-- Factory Method
-- DTO
-- Strategy
-- Template Method
-- IIFE
-- PRG (Post-Redirect-Get)
+## Configuración y Despliegue
 
-### Principios SOLID
-- **SRP** — Single Responsibility Principle
-- **OCP** — Open/Closed Principle
-- **LSP** — Liskov Substitution Principle
-- **ISP** — Interface Segregation Principle
-- **DIP** — Dependency Inversion Principle
+### Variables de entorno requeridas
+Configurar en el archivo `.env` local o en la pestaña **Variables** de Railway:
 
-### Principios de Clean Code
-- `declare(strict_types=1)` en todos los archivos
-- Clases `final`
-- Value Objects inmutables
-- Named Constructors
-- Fail-fast
-- Nombres autodocumentados
-- Separación estricta de capas
-- Sin fugas de abstracción
-- Fail-safe defaults (valores por defecto seguros)
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=nombre_base_datos
+DB_USERNAME=usuario_db
+DB_PASSWORD=contrasena_db
+DB_CHARSET=utf8mb4
 
-### Configuración externalizada (12-Factor App: Factor III)
-- Variables de entorno separadas del código fuente
-- Credenciales en `.env` (ignorado por git), nunca en se debe publicar en el repo
-- `.env.example` como plantilla y documentación de ejemplo para el equipo
-- `EnvLoader` con responsabilidad única: leer el entorno
-- Las variables reales del servidor tienen prioridad sobre `.env` (environment-over-code)
-
-### Seguridad
-
-- Credenciales fuera del código fuente y del historial de git
-
+SMTP_PASSWORD=re_tu_api_key_de_resend
+SMTP_FROM_ADDRESS=onboarding@resend.dev
+SMTP_FROM_NAME="Gestion de Usuarios"
