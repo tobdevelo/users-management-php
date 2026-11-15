@@ -6,6 +6,8 @@
     <?php if ($authUser): ?>
         <a href="?route=users.create">Registrar usuario</a>
         <a href="?route=users.index">Listar usuarios</a>
+        <a href="?route=noticias.create">Registrar noticia</a>
+        <a href="?route=noticias.index">Listar noticias</a>
         <span style="margin: 0 10px; color:#555;">|</span>
         <span style="color:#333;">👤 <?= htmlspecialchars($authUser['name'], ENT_QUOTES, 'UTF-8') ?></span>
         &nbsp;
