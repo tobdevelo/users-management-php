@@ -156,4 +156,104 @@ final class DependencyInjection
             self::getUserRepository()
         );
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Módulo Noticias (Ejercicio 29)
+    // ──────────────────────────────────────────────────────────────
+
+    public static function getNoticiaPersistenceMapper(): NoticiaPersistenceMapper
+    {
+        ClassLoader::loadClass('NoticiaPersistenceMapper');
+
+        return new NoticiaPersistenceMapper();
+    }
+
+    public static function getNoticiaRepository(): NoticiaRepositoryMySQL
+    {
+        ClassLoader::loadClass('NoticiaRepositoryMySQL');
+
+        return new NoticiaRepositoryMySQL(
+            self::getPdo(),
+            self::getNoticiaPersistenceMapper()
+        );
+    }
+
+    public static function getNoticiaApplicationMapper(): NoticiaApplicationMapper
+    {
+        ClassLoader::loadClass('NoticiaApplicationMapper');
+
+        return new NoticiaApplicationMapper();
+    }
+
+    public static function getCreateNoticiaUseCase(): CreateNoticiaUseCase
+    {
+        ClassLoader::loadClass('CreateNoticiaService');
+
+        return new CreateNoticiaService(
+            self::getNoticiaRepository(),
+            self::getNoticiaApplicationMapper()
+        );
+    }
+
+    public static function getUpdateNoticiaUseCase(): UpdateNoticiaUseCase
+    {
+        ClassLoader::loadClass('UpdateNoticiaService');
+        $repository = self::getNoticiaRepository();
+
+        return new UpdateNoticiaService(
+            $repository,
+            $repository,
+            self::getNoticiaApplicationMapper()
+        );
+    }
+
+    public static function getGetNoticiaByIdUseCase(): GetNoticiaByIdUseCase
+    {
+        ClassLoader::loadClass('GetNoticiaByIdService');
+
+        return new GetNoticiaByIdService(
+            self::getNoticiaRepository()
+        );
+    }
+
+    public static function getGetAllNoticiasUseCase(): GetAllNoticiasUseCase
+    {
+        ClassLoader::loadClass('GetAllNoticiasService');
+
+        return new GetAllNoticiasService(
+            self::getNoticiaRepository()
+        );
+    }
+
+    public static function getDeleteNoticiaUseCase(): DeleteNoticiaUseCase
+    {
+        ClassLoader::loadClass('DeleteNoticiaService');
+        $repository = self::getNoticiaRepository();
+
+        return new DeleteNoticiaService(
+            $repository,
+            $repository
+        );
+    }
+
+    public static function getNoticiaWebMapper(): NoticiaWebMapper
+    {
+        ClassLoader::loadClass('NoticiaWebMapper');
+
+        return new NoticiaWebMapper();
+    }
+
+    public static function getNoticiaController(): NoticiaController
+    {
+        ClassLoader::loadClass('NoticiaController');
+
+        return new NoticiaController(
+            self::getCreateNoticiaUseCase(),
+            self::getUpdateNoticiaUseCase(),
+            self::getGetNoticiaByIdUseCase(),
+            self::getGetAllNoticiasUseCase(),
+            self::getDeleteNoticiaUseCase(),
+            self::getNoticiaWebMapper()
+        );
+    }
 }

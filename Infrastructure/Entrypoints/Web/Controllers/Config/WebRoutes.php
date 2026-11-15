@@ -42,6 +42,34 @@ final class WebRoutes
                 'method' => 'POST',
                 'action' => 'delete',
             ),
+            'noticias.create' => array(
+                'method' => 'GET',
+                'action' => 'noticias.create',
+            ),
+            'noticias.store' => array(
+                'method' => 'POST',
+                'action' => 'noticias.store',
+            ),
+            'noticias.index' => array(
+                'method' => 'GET',
+                'action' => 'noticias.index',
+            ),
+            'noticias.show' => array(
+                'method' => 'GET',
+                'action' => 'noticias.show',
+            ),
+            'noticias.edit' => array(
+                'method' => 'GET',
+                'action' => 'noticias.edit',
+            ),
+            'noticias.update' => array(
+                'method' => 'POST',
+                'action' => 'noticias.update',
+            ),
+            'noticias.delete' => array(
+                'method' => 'POST',
+                'action' => 'noticias.delete',
+            ),
             'auth.login' => array(
                 'method' => 'GET',
                 'action' => 'login',
