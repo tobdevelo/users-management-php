@@ -2,16 +2,9 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
-require_once __DIR__ . '/PHPMailer/src/SMTP.php';
-require_once __DIR__ . '/PHPMailer/src/Exception.php';
-
 require_once __DIR__ . '/../../../Application/Ports/Out/EmailSenderPort.php';
 require_once __DIR__ . '/../../../Domain/Models/EmailDestinationModel.php';
 require_once __DIR__ . '/../../../Domain/Exceptions/EmailSenderException.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
 final class EmailSenderService implements EmailSenderPort
 {
@@ -43,37 +36,37 @@ final class EmailSenderService implements EmailSenderPort
 
     public function send(EmailDestinationModel $destination): void
     {
-        try {
-            $mailer = new PHPMailer(true);
+        $apiKey = trim($this->password);
+        $fromEmail = trim($this->fromAddress) !== '' ? trim($this->fromAddress) : 'onboarding@resend.dev';
 
-            $mailer->isSMTP();
-            $mailer->SMTPDebug = 0;
-            $mailer->SMTPAuth = true;
-            $mailer->Host = $this->host;
-            $mailer->Username = $this->username;
-            $mailer->Password = $this->password;
-            $mailer->SMTPSecure = $this->encryption;
-            $mailer->Port = $this->port;
-            $mailer->CharSet = 'UTF-8';
+        $payload = json_encode([
+            'from' => $this->fromName . ' <' . $fromEmail . '>',
+            'to' => [$destination->getDestinationEmail()],
+            'subject' => $destination->getSubject(),
+            'html' => $destination->getBody(),
+        ]);
 
-            $mailer->setFrom($this->fromAddress, $this->fromName);
-            $mailer->addAddress(
-                $destination->getDestinationEmail(),
-                $destination->getDestinationName()
-            );
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS => (string) $payload,
+        ]);
 
-            $mailer->isHTML(true);
-            $mailer->Subject = $destination->getSubject();
-            $mailer->Body = $destination->getBody();
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
 
-            $mailer->send();
-
-        } catch (PHPMailerException $e) {
+        if ($response === false || $httpCode < 200 || $httpCode >= 300) {
             throw new EmailSenderException(
                 'No se pudo enviar el correo a ' . $destination->getDestinationEmail()
-                . '. Error SMTP: ' . $e->getMessage(),
-                0,
-                $e
+                . '. Error API (' . $httpCode . '): ' . ($curlError !== '' ? $curlError : (string) $response)
             );
         }
     }
